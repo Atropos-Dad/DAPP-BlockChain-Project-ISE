@@ -76,15 +76,22 @@ const WalletDetails: React.FC = () => {
       
       try {
         setIsLoadingTxs(true);
+        //TODO THIS IS BAD ! _
         // Using ethers v6 to get the most recent transactions
         // Note: This is a simplified implementation and may not work on all networks
         // For production, you might want to use a service like Etherscan API
         const blockNumber = await provider.getBlockNumber();
-        const lastFiveBlocks = Array.from({length: 5}, (_, i) => blockNumber - i);
-        
+        // Search up to the last 1000 blocks for transactions
+        const searchDepth = Math.min(blockNumber, 1000); 
+        const blocksToSearch = Array.from({length: searchDepth}, (_, i) => blockNumber - i);
+
         const txs: any[] = [];
-        for (const block of lastFiveBlocks) {
-          const blockData = await provider.getBlock(block);
+        // Search blocks from latest to oldest within the defined depth
+        for (const blockNum of blocksToSearch) { 
+          // Ensure we don't go below block 0
+          if (blockNum < 0) break; 
+
+          const blockData = await provider.getBlock(blockNum);
           if (blockData && blockData.transactions) {
             // We'll get detailed info for each transaction
             for (const txHash of blockData.transactions) {
@@ -311,12 +318,33 @@ const WalletDetails: React.FC = () => {
         )}
       </div>
       
-      <div style={{textAlign: 'center', marginTop: '20px'}}>
+      <div style={{marginTop: '20px', display: 'flex', gap: '10px'}}>
         <button 
           onClick={handleDisconnect}
-          style={{backgroundColor: '#f44336', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '4px', cursor: 'pointer'}}
+          style={{
+            backgroundColor: '#f44336',
+            color: 'white',
+            border: 'none',
+            padding: '10px 15px',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
         >
           Disconnect Wallet
+        </button>
+        
+        <button 
+          onClick={() => navigate('/buy-tickets')}
+          style={{
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            padding: '10px 15px',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Buy Event Tickets
         </button>
       </div>
     </div>
