@@ -5,27 +5,13 @@ import { ethers } from 'ethers';
 import { provider, getContract } from '../chain';
 
 // Import ABI and contract addresses
+import EventTicketSalesABI from '../abis/EventTicketSales.json'; // Import Sales ABI
+import EventTokenABI from '../abis/EventTicketToken.json'; // Import Token ABI
 const EVENT_TICKET_SALES_ADDRESS = import.meta.env.VITE_EVENT_TICKET_SALES_ADDRESS || '';
 const EVENT_TOKEN_ADDRESS = import.meta.env.VITE_EVENT_TOKEN_ADDRESS || '';
 
 // TODO - ABIs simplified for the required functions
-const EVENT_TICKET_SALES_ABI = [
-  "function buyTickets(uint256 amount) external payable",
-  "function ticketPrice() external view returns (uint256)",
-  "function remainingSalesTime() external view returns (uint256)",
-  "function totalSold() external view returns (uint256)",
-  "function salesPaused() external view returns (bool)"
-];
-
-const EVENT_TOKEN_ABI = [
-  "function balanceOf(address account) external view returns (uint256)",
-  "function availableSupply() external view returns (uint256)",
-  "function name() external view returns (string)",
-  "function symbol() external view returns (string)",
-  "function eventName() external view returns (string)",
-  "function eventDate() external view returns (string)",
-  "function eventVenue() external view returns (string)"
-];
+// Removed hardcoded ABIs
 
 const BuyTicketsPage: React.FC = () => {
   const { wallet } = useWallet();
@@ -81,13 +67,13 @@ const BuyTicketsPage: React.FC = () => {
         // Create contract instances
         const tokenContract = new ethers.Contract(
           EVENT_TOKEN_ADDRESS,
-          EVENT_TOKEN_ABI,
+          EventTokenABI.abi, // Access the .abi property
           provider
         );
         
         const salesContract = new ethers.Contract(
           EVENT_TICKET_SALES_ADDRESS,
-          EVENT_TICKET_SALES_ABI,
+          EventTicketSalesABI.abi, // Access the .abi property
           provider
         );
 
@@ -155,7 +141,7 @@ const BuyTicketsPage: React.FC = () => {
       // Create contract instance with signer
       const salesContract = new ethers.Contract(
         EVENT_TICKET_SALES_ADDRESS,
-        EVENT_TICKET_SALES_ABI,
+        EventTicketSalesABI.abi, // Access the .abi property
         signer
       );
       
@@ -178,7 +164,7 @@ const BuyTicketsPage: React.FC = () => {
       
       // Refresh contract data
       const [available, sold] = await Promise.all([
-        new ethers.Contract(EVENT_TOKEN_ADDRESS, EVENT_TOKEN_ABI, provider).availableSupply(),
+        new ethers.Contract(EVENT_TOKEN_ADDRESS, EventTokenABI.abi, provider).availableSupply(), // Access the .abi property
         salesContract.totalSold()
       ]);
       
