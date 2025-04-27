@@ -6,6 +6,7 @@ import RestoreWalletPage from './pages/RestoreWalletPage'
 import WalletDetails from './pages/WalletDetails'
 import BuyTicketsPage from './pages/BuyTicketsPage'
 import LandingPage from './pages/LandingPage'
+import MyTickets from './pages/MyTickets'
 
 function AppRoutes() {
   const { wallet } = useWallet();
@@ -36,6 +37,10 @@ function AppRoutes() {
         path="/buy-tickets" 
         element={wallet ? <BuyTicketsPage /> : <Navigate replace to="/" />} 
       />
+      <Route
+        path="/my-tickets"
+        element={wallet ? <MyTickets /> : <Navigate replace to="/" />}
+      />
     </Routes>
   );
 }
@@ -59,7 +64,8 @@ function Navigation() {
           ) : (
             <>
               <Link to="/wallet" style={{marginRight: '15px', textDecoration: 'none'}}>Wallet Details</Link>
-              <Link to="/buy-tickets" style={{textDecoration: 'none'}}>Buy Tickets</Link>
+              <Link to="/buy-tickets" style={{marginRight: '15px', textDecoration: 'none'}}>Buy Tickets</Link>
+              <Link to="/my-tickets" style={{textDecoration: 'none'}}>My Tickets</Link>
             </>
           )}
         </div>

@@ -9,9 +9,9 @@ Description
 Create a Web3 Distributed Application (DApp) that implements simple ticketing system.  You should use the Ethereum Sepolia Testnet as you blockchain for Solidity smart contract deployments,  and HTML, CSS and Javascript for your front end.  You are free to use any development environments that you are comfortable with, however examples in this module will be demonstrated using Visual Studio Code and the Online Remix Solidity compiler and deployment tool.
 
 Front End:
-    - [ ] Page allowing a user to create a wallet.
-        - [ ] Should provide the ability to download the created wallet.
-        - [ ] Should display wallet details once created.
+    - [X] Page allowing a user to create a wallet.
+        - [X] Should provide the ability to download the created wallet.
+        - [X] Should display wallet details once created.
     - [ ] Page allowing a user to check their current crypto and ticket token balance.
         - [ ] To be used by the following actors:
             - [ ] Person attending the event so that they can confirm their purchase.
