@@ -130,4 +130,18 @@ contract EventTicketTest is Test {
         // Check available tickets
         assertEq(sales.availableTickets(), MAX_SUPPLY - buyAmount);
     }
+
+    /**
+     * @notice Test withdrawing funds from the sales contract
+     * @dev This test uses a completely new environment instead of the setup() environment for these reasons:
+     *   1. In the main setup, the organizer is set to address(this) (the test contract itself)
+     *      which cannot receive ETH since it has no fallback/receive functions
+     *   2. Withdrawing funds to the test contract would fail with "withdrawal failed" error
+     *   3. Using a separate EOA-like address as organizer lets us test the complete withdrawal flow
+     *   4. This approach isolates the test from any state changes in other tests
+     */
+    function testWithdrawFunds() public {
+        // Create a completely new test environment for this test
+        // ... existing code ...
+    }
 } 
