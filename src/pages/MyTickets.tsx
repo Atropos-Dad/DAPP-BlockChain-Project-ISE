@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
-import { ethers } from 'ethers';
-import { provider } from '../chain';
-import EventTicketTokenABI from '../abis/EventTicketToken.json'; // Import Token ABI
+
+// Import custom hooks
+import { useEventDetails, useTicketBalance } from '../hooks/useContractData';
 
 // Get contract address from environment variables
 const EVENT_TOKEN_ADDRESS = import.meta.env.VITE_EVENT_TOKEN_ADDRESS || '';
@@ -11,61 +11,31 @@ const EVENT_TOKEN_ADDRESS = import.meta.env.VITE_EVENT_TOKEN_ADDRESS || '';
 const MyTickets: React.FC = () => {
   const { wallet } = useWallet();
   const navigate = useNavigate();
-  const [ticketBalance, setTicketBalance] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [eventDetails, setEventDetails] = useState<{
-    name: string;
-    symbol: string;
-    eventName: string;
-    eventDate: string;
-    eventVenue: string;
-  } | null>(null);
 
+  // Use custom hooks to fetch data
+  const { eventDetails, isLoading: eventDetailsLoading, error: eventDetailsError } = 
+    useEventDetails(EVENT_TOKEN_ADDRESS);
+  
+  const { balance: ticketBalance, isLoading: balanceLoading, error: balanceError } = 
+    useTicketBalance(EVENT_TOKEN_ADDRESS, wallet?.address);
+  
+  // Combined loading state
+  const isLoading = eventDetailsLoading || balanceLoading;
+
+  // Handle errors from hooks
+  useEffect(() => {
+    const combinedError = eventDetailsError || balanceError;
+    if (combinedError) {
+      setError(combinedError);
+    }
+  }, [eventDetailsError, balanceError]);
+
+  // Redirect if no wallet
   useEffect(() => {
     if (!wallet) {
-      navigate('/import'); // Redirect if wallet not connected
-      return;
+      navigate('/import');
     }
-
-    const fetchTicketData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        if (!EVENT_TOKEN_ADDRESS) {
-          throw new Error('Ticket contract address is not configured in environment variables.');
-        }
-
-        // Create contract instance
-        const tokenContract = new ethers.Contract(
-          EVENT_TOKEN_ADDRESS,
-          EventTicketTokenABI.abi,
-          provider
-        );
-
-        // Fetch balance and event details
-        const [balance, name, symbol, eventName, eventDate, eventVenue] = await Promise.all([
-          tokenContract.balanceOf(wallet.address),
-          tokenContract.name(),
-          tokenContract.symbol(),
-          tokenContract.eventName(),
-          tokenContract.eventDate(),
-          tokenContract.eventVenue()
-        ]);
-
-        setTicketBalance(Number(balance));
-        setEventDetails({ name, symbol, eventName, eventDate, eventVenue });
-
-      } catch (err) {
-        console.error('Error fetching ticket data:', err);
-        setError(`Failed to load ticket information: ${err instanceof Error ? err.message : String(err)}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTicketData();
   }, [wallet, navigate]);
 
   if (isLoading) {

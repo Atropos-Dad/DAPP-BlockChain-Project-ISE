@@ -2,184 +2,53 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { ethers } from 'ethers';
-import { provider, getContract } from '../chain';
 
-// Import ABI and contract addresses
-import EventTicketSalesABI from '../abis/EventTicketSales.json'; // Import Sales ABI
-import EventTokenABI from '../abis/EventTicketToken.json'; // Import Token ABI
+// Import contract hooks
+import { useEventDetails, useTicketSalesInfo, useGasEstimate, useBuyTickets } from '../hooks/useContractData';
+
+// Get contract addresses from environment
 const EVENT_TICKET_SALES_ADDRESS = import.meta.env.VITE_EVENT_TICKET_SALES_ADDRESS || '';
 const EVENT_TOKEN_ADDRESS = import.meta.env.VITE_EVENT_TOKEN_ADDRESS || '';
-
-// TODO - ABIs simplified for the required functions
-// Removed hardcoded ABIs
 
 const BuyTicketsPage: React.FC = () => {
   const { wallet } = useWallet();
   const navigate = useNavigate();
   
   // State variables
-  const [ticketPrice, setTicketPrice] = useState<string>('');
-  const [availableTickets, setAvailableTickets] = useState<number>(0);
-  const [totalSold, setTotalSold] = useState<number>(0);
-  const [remainingTime, setRemainingTime] = useState<number>(0);
-  const [salesPaused, setSalesPaused] = useState<boolean>(false);
   const [quantity, setQuantity] = useState<number>(1);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isTransacting, setIsTransacting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [eventDetails, setEventDetails] = useState<{
-    name: string;
-    symbol: string;
-    eventName: string;
-    eventDate: string;
-    eventVenue: string;
-  }>({
-    name: '',
-    symbol: '',
-    eventName: '',
-    eventDate: '',
-    eventVenue: ''
-  });
+  
+  // Use hooks to fetch data
+  const { eventDetails, isLoading: eventDetailsLoading, error: eventDetailsError } = 
+    useEventDetails(EVENT_TOKEN_ADDRESS);
+  
+  const { ticketSalesInfo, isLoading: salesInfoLoading, error: salesInfoError } = 
+    useTicketSalesInfo(EVENT_TICKET_SALES_ADDRESS);
+  
+  const { gasEstimate } = useGasEstimate(
+    EVENT_TICKET_SALES_ADDRESS,
+    wallet,
+    quantity,
+    ticketSalesInfo?.ticketPrice || '0'
+  );
+  
+  const { buyTickets, isTransacting, error: buyError, transactionHash } = 
+    useBuyTickets(EVENT_TICKET_SALES_ADDRESS, wallet);
+  
+  // Combined loading state
+  const isLoading = eventDetailsLoading || salesInfoLoading;
   
   // Calculate total cost
-  const totalCost = quantity > 0 && ticketPrice 
-    ? ethers.formatEther(ethers.parseEther(ticketPrice) * BigInt(quantity))
+  const totalCost = quantity > 0 && ticketSalesInfo?.ticketPrice
+    ? ethers.formatEther(ethers.parseEther(ticketSalesInfo.ticketPrice) * BigInt(quantity))
     : '0';
-
-  useEffect(() => {
-    // If no wallet is connected, redirect to import page
-    if (!wallet) {
-      navigate('/import');
-      return;
-    }
-
-    const loadContracts = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Validate contract addresses
-        if (!EVENT_TICKET_SALES_ADDRESS || !EVENT_TOKEN_ADDRESS) {
-          throw new Error('Contract addresses are not configured');
-        }
-
-        // Create contract instances
-        const tokenContract = new ethers.Contract(
-          EVENT_TOKEN_ADDRESS,
-          EventTokenABI.abi, // Access the .abi property
-          provider
-        );
-        
-        const salesContract = new ethers.Contract(
-          EVENT_TICKET_SALES_ADDRESS,
-          EventTicketSalesABI.abi, // Access the .abi property
-          provider
-        );
-
-        // Fetch event details
-        const [
-          name,
-          symbol,
-          eventName,
-          eventDate,
-          eventVenue,
-          price,
-          available,
-          sold,
-          remaining,
-          paused
-        ] = await Promise.all([
-          tokenContract.name(),
-          tokenContract.symbol(),
-          tokenContract.eventName(),
-          tokenContract.eventDate(),
-          tokenContract.eventVenue(),
-          salesContract.ticketPrice(),
-          tokenContract.availableSupply(),
-          salesContract.totalSold(),
-          salesContract.remainingSalesTime(),
-          salesContract.salesPaused()
-        ]);
-
-        // Update state with fetched data
-        setEventDetails({
-          name,
-          symbol,
-          eventName,
-          eventDate,
-          eventVenue
-        });
-        setTicketPrice(ethers.formatEther(price));
-        setAvailableTickets(Number(available));
-        setTotalSold(Number(sold));
-        setRemainingTime(Number(remaining));
-        setSalesPaused(paused);
-      } catch (err) {
-        console.error('Error loading contract data:', err);
-        setError(`Failed to load ticket information: ${err instanceof Error ? err.message : String(err)}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadContracts();
-  }, [wallet, navigate]);
-
-  // Handle buying tickets
-  const handleBuyTickets = async () => {
-    if (!wallet || quantity <= 0) return;
-    
-    try {
-      setIsTransacting(true);
-      setError(null);
-      setSuccessMessage(null);
-      
-      // Create signer from wallet
-      const signer = wallet;
-      
-      // Create contract instance with signer
-      const salesContract = new ethers.Contract(
-        EVENT_TICKET_SALES_ADDRESS,
-        EventTicketSalesABI.abi, // Access the .abi property
-        signer
-      );
-      
-      // Calculate total cost in wei
-      const totalWei = ethers.parseEther(ticketPrice) * BigInt(quantity);
-      
-      // Call the buyTickets function
-      const tx = await salesContract.buyTickets(quantity, {
-        value: totalWei
-      });
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      // Show success message with transaction hash
-      setSuccessMessage(`Successfully purchased ${quantity} tickets! Transaction hash: ${receipt.hash}`);
-      
-      // Reset quantity
-      setQuantity(1);
-      
-      // Refresh contract data
-      const [available, sold] = await Promise.all([
-        new ethers.Contract(EVENT_TOKEN_ADDRESS, EventTokenABI.abi, provider).availableSupply(), // Access the .abi property
-        salesContract.totalSold()
-      ]);
-      
-      setAvailableTickets(Number(available));
-      setTotalSold(Number(sold));
-    } catch (err) {
-      console.error('Error buying tickets:', err);
-      setError(`Failed to buy tickets: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setIsTransacting(false);
-    }
-  };
-
+  
   // Format remaining time as days, hours, minutes
   const formatRemainingTime = () => {
+    if (!ticketSalesInfo) return 'Loading...';
+    
+    const remainingTime = ticketSalesInfo.remainingTime;
     if (remainingTime <= 0) return 'Sales ended';
     
     const days = Math.floor(remainingTime / (24 * 60 * 60));
@@ -188,6 +57,39 @@ const BuyTicketsPage: React.FC = () => {
     
     return `${days}d ${hours}h ${minutes}m`;
   };
+  
+  // Handle buying tickets
+  const handleBuyTickets = async () => {
+    if (!wallet || !ticketSalesInfo || quantity <= 0) return;
+    
+    setError(null);
+    setSuccessMessage(null);
+    
+    const result = await buyTickets(quantity, ticketSalesInfo.ticketPrice);
+    
+    if (result.success) {
+      setSuccessMessage(`Successfully purchased ${quantity} tickets! Transaction hash: ${result.hash}`);
+      setQuantity(1);
+    } else {
+      setError(result.error || 'Failed to buy tickets');
+    }
+  };
+  
+  // Combine errors
+  useEffect(() => {
+    // Combine errors from different sources
+    const combinedError = eventDetailsError || salesInfoError || buyError;
+    if (combinedError) {
+      setError(combinedError);
+    }
+  }, [eventDetailsError, salesInfoError, buyError]);
+  
+  // Redirect if no wallet
+  useEffect(() => {
+    if (!wallet) {
+      navigate('/import');
+    }
+  }, [wallet, navigate]);
 
   if (isLoading) {
     return (
@@ -233,18 +135,20 @@ const BuyTicketsPage: React.FC = () => {
         borderRadius: '4px',
         marginBottom: '20px'
       }}>
-        <h2 style={{fontSize: '1.4em', marginBottom: '10px'}}>{eventDetails.eventName}</h2>
-        <div><strong>Date:</strong> {eventDetails.eventDate}</div>
-        <div><strong>Venue:</strong> {eventDetails.eventVenue}</div>
-        <div><strong>Token:</strong> {eventDetails.name} ({eventDetails.symbol})</div>
+        <h2 style={{fontSize: '1.4em', marginBottom: '10px'}}>{eventDetails?.eventName}</h2>
+        <div><strong>Date:</strong> {eventDetails?.eventDate}</div>
+        <div><strong>Venue:</strong> {eventDetails?.eventVenue}</div>
+        <div><strong>Token:</strong> {eventDetails?.name} ({eventDetails?.symbol})</div>
         <div style={{marginTop: '10px'}}>
-          <strong>Ticket Price:</strong> {ticketPrice} ETH
+          <strong>Ticket Price:</strong> {ticketSalesInfo?.ticketPrice} ETH
         </div>
         <div>
-          <strong>Available Tickets:</strong> {availableTickets} / {availableTickets + totalSold}
+          <strong>Available Tickets:</strong> {ticketSalesInfo?.availableTickets} / {
+            (ticketSalesInfo?.availableTickets || 0) + (ticketSalesInfo?.totalSold || 0)
+          }
         </div>
         <div>
-          <strong>Sales Status:</strong> {salesPaused ? 'PAUSED' : 'ACTIVE'} ({formatRemainingTime()})
+          <strong>Sales Status:</strong> {ticketSalesInfo?.salesPaused ? 'PAUSED' : 'ACTIVE'} ({formatRemainingTime()})
         </div>
       </div>
       
@@ -263,7 +167,7 @@ const BuyTicketsPage: React.FC = () => {
           <input
             type="number"
             min="1"
-            max={availableTickets}
+            max={ticketSalesInfo?.availableTickets}
             value={quantity}
             onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
             style={{
@@ -272,42 +176,52 @@ const BuyTicketsPage: React.FC = () => {
               border: '1px solid #ddd',
               width: '100px'
             }}
-            disabled={salesPaused || availableTickets === 0 || isTransacting}
+            disabled={ticketSalesInfo?.salesPaused || ticketSalesInfo?.availableTickets === 0 || isTransacting}
           />
         </div>
         
         <div style={{marginBottom: '20px'}}>
-          <strong>Total Cost:</strong> {totalCost} ETH
+          <strong>Ticket Cost:</strong> {totalCost} ETH
+        </div>
+        <div style={{marginBottom: '20px'}}>
+          <strong>Estimated Gas:</strong> {gasEstimate} ETH
+        </div>
+        <div style={{marginBottom: '20px', fontWeight: 'bold'}}>
+          <strong>Total Cost (incl. gas):</strong> {
+            typeof gasEstimate === 'string' && !isNaN(parseFloat(gasEstimate)) 
+              ? (parseFloat(totalCost) + parseFloat(gasEstimate)).toFixed(6) 
+              : `${totalCost} + gas`
+          } ETH
         </div>
         
         <button
           onClick={handleBuyTickets}
           disabled={
-            salesPaused || 
-            availableTickets === 0 || 
+            ticketSalesInfo?.salesPaused || 
+            ticketSalesInfo?.availableTickets === 0 || 
             quantity <= 0 || 
-            quantity > availableTickets || 
+            (ticketSalesInfo && quantity > ticketSalesInfo.availableTickets) || 
             isTransacting
           }
           style={{
-            backgroundColor: (salesPaused || availableTickets === 0) ? '#ccc' : '#2196F3',
+            backgroundColor: (ticketSalesInfo?.salesPaused || ticketSalesInfo?.availableTickets === 0) ? '#ccc' : '#2196F3',
             color: 'white',
             border: 'none',
             padding: '10px 15px',
             borderRadius: '4px',
-            cursor: (salesPaused || availableTickets === 0) ? 'not-allowed' : 'pointer'
+            cursor: (ticketSalesInfo?.salesPaused || ticketSalesInfo?.availableTickets === 0) ? 'not-allowed' : 'pointer'
           }}
         >
           {isTransacting ? 'Processing...' : 'Buy Tickets'}
         </button>
         
-        {salesPaused && (
+        {ticketSalesInfo?.salesPaused && (
           <div style={{color: '#f44336', marginTop: '10px'}}>
             Sales are currently paused
           </div>
         )}
         
-        {availableTickets === 0 && (
+        {ticketSalesInfo?.availableTickets === 0 && (
           <div style={{color: '#f44336', marginTop: '10px'}}>
             Sold out - no tickets available
           </div>
