@@ -154,6 +154,20 @@ contract EventTicketToken {
     }
     
     /**
+     * @dev Mints entire batch of tickets to a destination (for pre-minting pattern)
+     */
+    function mintBatch(address to, uint256 amount) external onlyOwner returns (bool) {
+        require(to != address(0), "EventTicketToken: mint to the zero address");
+        require(_totalSupply + amount <= maxSupply, "EventTicketToken: max supply exceeded");
+        
+        _totalSupply += amount;
+        _balances[to] += amount;
+        
+        emit Transfer(address(0), to, amount);
+        return true;
+    }
+    
+    /**
      * @dev Burns tickets - used when tickets are checked in/used
      */
     function burn(address from, uint256 amount) external onlySalesContract returns (bool) {

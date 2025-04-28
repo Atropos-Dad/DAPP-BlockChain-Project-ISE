@@ -71,11 +71,11 @@ contract EventTicketSales {
         require(amount > 0, "EventTicketSales: amount must be greater than zero");
         require(msg.value == ticketPrice * amount, "EventTicketSales: incorrect ETH amount sent");
         
-        uint256 availableTickets = ticketToken.availableSupply();
-        require(amount <= availableTickets, "EventTicketSales: not enough tickets available");
+        uint256 contractBalance = ticketToken.balanceOf(address(this));
+        require(amount <= contractBalance, "EventTicketSales: not enough tickets available");
         
-        // Mint tickets to the buyer
-        ticketToken.mint(msg.sender, amount);
+        // Transfer tickets from contract to buyer
+        ticketToken.transfer(msg.sender, amount);
         
         // Update purchase records
         purchases[msg.sender] += amount;
@@ -101,8 +101,8 @@ contract EventTicketSales {
         // Ensure contract has enough balance for refund
         require(address(this).balance >= refundAmount, "EventTicketSales: insufficient contract balance for refund");
         
-        // Burn the tickets
-        ticketToken.burn(msg.sender, amount);
+        // Transfer tickets back to contract (requires approval)
+        ticketToken.transferFrom(msg.sender, address(this), amount);
         
         // Update purchase records
         purchases[msg.sender] -= amount;
@@ -172,5 +172,12 @@ contract EventTicketSales {
     function remainingRefundTime() external view returns (uint256) {
         if (block.timestamp >= refundEndTime) return 0;
         return refundEndTime - block.timestamp;
+    }
+    
+    /**
+     * @dev Get available ticket supply
+     */
+    function availableTickets() external view returns (uint256) {
+        return ticketToken.balanceOf(address(this));
     }
 } 

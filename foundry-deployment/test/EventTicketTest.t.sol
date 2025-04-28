@@ -47,6 +47,9 @@ contract EventTicketTest is Test {
         
         // Authorize sales contract
         token.addSalesContract(address(sales));
+        
+        // Pre-mint all tickets to the sales contract
+        token.mintBatch(address(sales), MAX_SUPPLY);
     }
     
     function testBuyTickets() public {
@@ -72,9 +75,13 @@ contract EventTicketTest is Test {
         vm.prank(buyer);
         sales.buyTickets{value: cost}(buyAmount);
         
-        // Then refund one ticket
+        // Then approve and refund one ticket
         uint256 refundAmount = 1;
         uint256 buyerBalanceBefore = address(buyer).balance;
+        
+        // Approve the sales contract to transfer tokens back
+        vm.prank(buyer);
+        token.approve(address(sales), refundAmount);
         
         vm.prank(buyer);
         sales.refundTickets(refundAmount);
@@ -107,5 +114,20 @@ contract EventTicketTest is Test {
         // Should be able to buy now
         vm.prank(buyer);
         sales.buyTickets{value: TICKET_PRICE}(1);
+    }
+    
+    function testAvailableTickets() public {
+        // Initially all tickets are available
+        assertEq(sales.availableTickets(), MAX_SUPPLY);
+        
+        // Buy some tickets
+        uint256 buyAmount = 5;
+        uint256 cost = TICKET_PRICE * buyAmount;
+        
+        vm.prank(buyer);
+        sales.buyTickets{value: cost}(buyAmount);
+        
+        // Check available tickets
+        assertEq(sales.availableTickets(), MAX_SUPPLY - buyAmount);
     }
 } 
