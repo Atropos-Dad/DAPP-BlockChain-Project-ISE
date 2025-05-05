@@ -14,6 +14,7 @@ contract EventTicketToken is ERC20, Ownable {
     
     // Access control
     mapping(address => bool) public salesContracts; // Authorized sales contracts
+    mapping(address => bool) public redemptionAgents; // Authorized redemption agents
     
     // Event metadata
     string public eventName;
@@ -24,9 +25,17 @@ contract EventTicketToken is ERC20, Ownable {
     // Events
     event SalesContractAdded(address indexed salesContract);
     event SalesContractRemoved(address indexed salesContract);
+    event RedemptionAgentAdded(address indexed agent);
+    event RedemptionAgentRemoved(address indexed agent);
+    event TicketRedeemed(address indexed holder, uint256 amount);
     
     modifier onlySalesContract() {
         require(salesContracts[msg.sender], "EventTicketToken: caller is not a sales contract");
+        _;
+    }
+    
+    modifier onlyRedemptionAgent() {
+        require(redemptionAgents[msg.sender], "EventTicketToken: caller is not a redemption agent");
         _;
     }
     
@@ -88,6 +97,20 @@ contract EventTicketToken is ERC20, Ownable {
     }
     
     /**
+     * @dev Redeem tickets by transferring them back to the owner
+     */
+    function redeem(address holder, uint256 amount) external onlyRedemptionAgent returns (bool) {
+        require(holder != address(0), "EventTicketToken: redeem from the zero address");
+        require(balanceOf(holder) >= amount, "EventTicketToken: insufficient tickets");
+        
+        // Transfer the tickets back to the contract owner
+        _transfer(holder, owner(), amount);
+        
+        emit TicketRedeemed(holder, amount);
+        return true;
+    }
+    
+    /**
      * @dev Add a sales contract that can mint tokens
      */
     function addSalesContract(address salesContract) external onlyOwner {
@@ -102,6 +125,23 @@ contract EventTicketToken is ERC20, Ownable {
     function removeSalesContract(address salesContract) external onlyOwner {
         salesContracts[salesContract] = false;
         emit SalesContractRemoved(salesContract);
+    }
+    
+    /**
+     * @dev Add a redemption agent that can redeem tickets
+     */
+    function addRedemptionAgent(address agent) external onlyOwner {
+        require(agent != address(0), "EventTicketToken: invalid redemption agent address");
+        redemptionAgents[agent] = true;
+        emit RedemptionAgentAdded(agent);
+    }
+    
+    /**
+     * @dev Remove a redemption agent
+     */
+    function removeRedemptionAgent(address agent) external onlyOwner {
+        redemptionAgents[agent] = false;
+        emit RedemptionAgentRemoved(agent);
     }
     
     /**
