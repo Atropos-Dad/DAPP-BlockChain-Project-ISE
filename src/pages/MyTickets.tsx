@@ -73,7 +73,22 @@ const MyTickets: React.FC = () => {
         )}
       </div>
 
-      <div style={{ marginTop: '30px', display: 'flex', gap: '10px' }}>
+      <div style={{ marginTop: '30px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        {ticketBalance > 0 && (
+          <button
+            onClick={() => navigate('/show-qr')}
+            style={{
+              backgroundColor: '#2196F3',
+              color: 'white',
+              border: 'none',
+              padding: '10px 15px',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Show Ticket QR Code
+          </button>
+        )}
         <button
           onClick={() => navigate('/buy-tickets')}
           style={{

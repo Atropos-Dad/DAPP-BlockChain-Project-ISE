@@ -103,9 +103,8 @@ contract EventTicketToken is ERC20, Ownable {
         require(holder != address(0), "EventTicketToken: redeem from the zero address");
         require(balanceOf(holder) >= amount, "EventTicketToken: insufficient tickets");
         
-        // Transfer the tickets back to the contract owner
         _transfer(holder, owner(), amount);
-        
+        // _burn(holder, amount); this would be the correct way to do it, but spec suggests not burning tickets. So I SHANT! 
         emit TicketRedeemed(holder, amount);
         return true;
     }

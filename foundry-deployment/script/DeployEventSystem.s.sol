@@ -17,6 +17,14 @@ contract DeployEventSystem is Script {
     uint256 public constant SALES_DURATION = 60 days;
     uint256 public constant REFUND_DURATION = 14 days;
     
+    // Redemption agent configuration - hardcoded list for testing
+    address[] private redemptionAgentAddresses = [
+        // Add your test wallet addresses here.
+        address(0xCd8bAab24352c0261134e84FeA9543aB41D6DEE8)
+        // Example: address(0x1234567890123456789012345678901234567890) 
+        // Make sure to uncomment and replace with actual addresses or leave empty.
+    ];
+    
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
@@ -42,6 +50,9 @@ contract DeployEventSystem is Script {
         // Authorize sales contract to perform privileged operations
         token.addSalesContract(address(sales));
         
+        // Set up redemption agents from the hardcoded list
+        setupRedemptionAgents(token);
+        
         // Pre-mint ALL tickets to the sales contract (key part of the pre-mint pattern)
         token.mintBatch(address(sales), MAX_SUPPLY);
         
@@ -51,5 +62,27 @@ contract DeployEventSystem is Script {
         console.log("Pre-minted", MAX_SUPPLY, "tickets to the sales contract");
         
         vm.stopBroadcast();
+    }
+    
+    /**
+     * @dev Set up redemption agents from a hardcoded list in the script.
+     */
+    function setupRedemptionAgents(EventTicketToken token) internal {
+        uint256 agentsAdded = 0;
+        
+        for (uint256 i = 0; i < redemptionAgentAddresses.length; i++) {
+            address agent = redemptionAgentAddresses[i];
+            if (agent != address(0)) { // Ensure the address is not the zero address
+                token.addRedemptionAgent(agent);
+                console.log("Added redemption agent:", agent);
+                agentsAdded++;
+            }
+        }
+        
+        if (agentsAdded > 0) {
+            console.log("Total redemption agents added:", agentsAdded);
+        } else {
+            console.log("No redemption agents specified in the hardcoded list.");
+        }
     }
 } 

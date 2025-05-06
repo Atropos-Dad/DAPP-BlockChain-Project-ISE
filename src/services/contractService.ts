@@ -119,4 +119,15 @@ export const buyTickets = async (
   const receipt = await tx.wait();
   
   return receipt;
+};
+
+export const redeemTickets = async (
+  tokenAddress: string,
+  signer: ethers.Signer,
+  holder: string,
+  amount: number
+) => {
+  const tokenContract = getTokenContract(tokenAddress, signer);
+  const tx = await tokenContract.redeem(holder, amount);
+  return tx.wait();
 }; 

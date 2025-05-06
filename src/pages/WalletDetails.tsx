@@ -346,6 +346,20 @@ const WalletDetails: React.FC = () => {
         >
           Buy Event Tickets
         </button>
+
+        <button 
+          onClick={() => navigate('/redeem')}
+          style={{
+            backgroundColor: '#FF9800',
+            color: 'white',
+            border: 'none',
+            padding: '10px 15px',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Redeem Tickets (Agent)
+        </button>
       </div>
     </div>
   );
