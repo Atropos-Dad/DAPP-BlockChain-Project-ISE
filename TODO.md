@@ -12,13 +12,13 @@ Front End:
     - [X] Page allowing a user to create a wallet.
         - [X] Should provide the ability to download the created wallet.
         - [X] Should display wallet details once created.
-    - [ ] Page allowing a user to check their current crypto and ticket token balance.
-        - [ ] To be used by the following actors:
-            - [ ] Person attending the event so that they can confirm their purchase.
-            - [ ] Doorman, so they can confirm a wallet is the holder of the ticket.
+    - [X] Page allowing a user to check their current crypto and ticket token balance.
+        - [X] To be used by the following actors:
+            - [X] Person attending the event so that they can confirm their purchase.
+            - [X] Doorman, so they can confirm a wallet is the holder of the ticket.
             - [ ] Venue, so they can check on distribution of tickets
-    - [ ] Page allowing a user to buy a ticket (token).
-    - [ ] Page allowing a user to transfer a ticket back to the vendor.
+    - [X] Page allowing a user to buy a ticket (token).
+    - [X] Page allowing a user to transfer a ticket back to the vendor.
 
 Blockchain Backend:
 - [x] Smart contract implementing the ERC-20 standard and extended to allow tickets to be purchased using the native cryptocurrency of Sepolia (SETH)
