@@ -188,4 +188,182 @@ export const useBuyTickets = (salesAddress: string, signer: ethers.Signer | unde
   };
 
   return { buyTickets, isTransacting, error, transactionHash };
+};
+
+/**
+ * Hook for venue dashboard data
+ */
+export const useVenueDashboard = (
+  salesAddress: string,
+  tokenAddress: string,
+  signer?: ethers.Signer
+) => {
+  const [data, setData] = useState<{
+    ticketPrice: string;
+    availableTickets: number;
+    totalSold: number;
+    revenue: string;
+    remainingSalesTime: number;
+    remainingRefundTime: number;
+    salesPaused: boolean;
+  } | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!salesAddress || !tokenAddress) {
+      setLoading(false);
+      setError('Sales or token address is not provided');
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const info = await contractService.getTicketSalesInfo(salesAddress);
+        
+        const priceWei = ethers.parseEther(info.ticketPrice);
+        const revenue = ethers.formatEther(priceWei * BigInt(info.totalSold));
+        
+        setData({
+          ...info,
+          revenue,
+          remainingSalesTime: info.remainingTime,
+          remainingRefundTime: info.remainingRefundTime
+        });
+      } catch (err) {
+        console.error('Error fetching venue dashboard data:', err);
+        setError(`Failed to load venue dashboard data: ${err instanceof Error ? err.message : String(err)}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [salesAddress, tokenAddress]);
+
+  return { data, loading, error };
+};
+
+/**
+ * Hook for refunding sales tickets
+ */
+export const useRefundSales = (
+  salesAddress: string, 
+  tokenAddress: string,
+  signer?: ethers.Signer
+) => {
+  const [isTransacting, setIsTransacting] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
+  const [isApproving, setIsApproving] = useState<boolean>(false);
+
+  const refund = async (amount: number) => {
+    if (!signer) {
+      return { success: false, error: 'Wallet not connected' };
+    }
+    if (!tokenAddress) {
+      return { success: false, error: 'Token address not provided for approval' };
+    }
+
+    try {
+      setError(null);
+      setTransactionHash(null);
+
+      setIsApproving(true);
+      const tokenContract = contractService.getTokenContract(tokenAddress, signer);
+      const approveTx = await tokenContract.approve(salesAddress, ethers.parseUnits(amount.toString(), 0));
+      await approveTx.wait();
+      setIsApproving(false);
+
+      setIsTransacting(true);
+      const receipt = await contractService.refundSalesTickets(
+        salesAddress,
+        signer,
+        amount
+      );
+
+      setTransactionHash(receipt.hash);
+      return { success: true, hash: receipt.hash };
+    } catch (err) {
+      console.error('Error refunding tickets:', err);
+      const errorMessage = `Failed to refund tickets: ${err instanceof Error ? err.message : String(err)}`;
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsApproving(false);
+      setIsTransacting(false);
+    }
+  };
+
+  return { refund, isApproving, isTransacting, error, transactionHash };
+};
+
+/**
+ * Hook for managing redemption agents
+ */
+export const useManageAgents = (tokenAddress: string, signer?: ethers.Signer) => {
+  const [isWorking, setIsWorking] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
+
+  const addAgent = async (agent: string) => {
+    if (!signer) {
+      return { success: false, error: 'Wallet not connected' };
+    }
+
+    try {
+      setIsWorking(true);
+      setError(null);
+      setTransactionHash(null);
+
+      const receipt = await contractService.addRedemptionAgent(
+        tokenAddress,
+        signer,
+        agent
+      );
+
+      setTransactionHash(receipt.hash);
+      return { success: true, hash: receipt.hash };
+    } catch (err) {
+      console.error('Error adding redemption agent:', err);
+      const errorMessage = `Failed to add redemption agent: ${err instanceof Error ? err.message : String(err)}`;
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsWorking(false);
+    }
+  };
+
+  const removeAgent = async (agent: string) => {
+    if (!signer) {
+      return { success: false, error: 'Wallet not connected' };
+    }
+
+    try {
+      setIsWorking(true);
+      setError(null);
+      setTransactionHash(null);
+
+      const receipt = await contractService.removeRedemptionAgent(
+        tokenAddress,
+        signer,
+        agent
+      );
+
+      setTransactionHash(receipt.hash);
+      return { success: true, hash: receipt.hash };
+    } catch (err) {
+      console.error('Error removing redemption agent:', err);
+      const errorMessage = `Failed to remove redemption agent: ${err instanceof Error ? err.message : String(err)}`;
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsWorking(false);
+    }
+  };
+
+  return { addAgent, removeAgent, isWorking, error, transactionHash };
 }; 

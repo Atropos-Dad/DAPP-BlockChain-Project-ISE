@@ -15,6 +15,7 @@ contract EventTicketSales {
     uint256 public salesEndTime;
     uint256 public refundEndTime;
     bool public salesPaused;
+    uint256 public refundPercentage; // Represents the percentage (1-100) of the ticket price to be refunded
     
     // Sale tracking
     mapping(address => uint256) public purchases; // Tracks how many tickets each address purchased
@@ -51,17 +52,20 @@ contract EventTicketSales {
         address _ticketToken,
         uint256 _ticketPrice,
         uint256 _salesDuration,
-        uint256 _refundDuration
+        uint256 _refundDuration,
+        uint256 _refundPercentage // New parameter for refund percentage
     ) {
         require(_ticketToken != address(0), "EventTicketSales: invalid token address");
         require(_ticketPrice > 0, "EventTicketSales: ticket price must be greater than zero");
         require(_salesDuration > 0, "EventTicketSales: sales duration must be greater than zero");
+        require(_refundPercentage > 0 && _refundPercentage <= 100, "EventTicketSales: refund percentage must be between 1 and 100"); // Validation for refund percentage
         
         ticketToken = EventTicketToken(_ticketToken);
         organizer = msg.sender;
         ticketPrice = _ticketPrice;
         salesEndTime = block.timestamp + _salesDuration;
         refundEndTime = salesEndTime + _refundDuration;
+        refundPercentage = _refundPercentage; // Assign refund percentage
     }
     
     /**
@@ -95,11 +99,11 @@ contract EventTicketSales {
         require(balance >= amount, "EventTicketSales: not enough tickets to refund");
         require(purchases[msg.sender] >= amount, "EventTicketSales: you can only refund tickets you purchased");
         
-        // Calculate refund amount (100% refund)
-        uint256 refundAmount = ticketPrice * amount;
+        // Calculate refund amount based on the configured refund percentage
+        uint256 calculatedRefundAmount = (ticketPrice * amount * refundPercentage) / 100; 
         
         // Ensure contract has enough balance for refund
-        require(address(this).balance >= refundAmount, "EventTicketSales: insufficient contract balance for refund");
+        require(address(this).balance >= calculatedRefundAmount, "EventTicketSales: insufficient contract balance for refund");
         
         // Transfer tickets back to contract (requires approval)
         ticketToken.transferFrom(msg.sender, address(this), amount);
@@ -109,10 +113,10 @@ contract EventTicketSales {
         totalSold -= amount;
         
         // Send refund
-        (bool success, ) = payable(msg.sender).call{value: refundAmount}("");
+        (bool success, ) = payable(msg.sender).call{value: calculatedRefundAmount}("");
         require(success, "EventTicketSales: refund transfer failed");
         
-        emit TicketsRefunded(msg.sender, amount, refundAmount);
+        emit TicketsRefunded(msg.sender, amount, calculatedRefundAmount);
     }
     
     /**

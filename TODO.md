@@ -16,7 +16,7 @@ Front End:
         - [X] To be used by the following actors:
             - [X] Person attending the event so that they can confirm their purchase.
             - [X] Doorman, so they can confirm a wallet is the holder of the ticket.
-            - [ ] Venue, so they can check on distribution of tickets
+            - [X] Venue, so they can check on distribution of tickets
     - [X] Page allowing a user to buy a ticket (token).
     - [X] Page allowing a user to transfer a ticket back to the vendor.
 

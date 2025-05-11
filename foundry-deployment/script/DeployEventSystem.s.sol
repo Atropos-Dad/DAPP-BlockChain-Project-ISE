@@ -16,6 +16,7 @@ contract DeployEventSystem is Script {
     uint256 public constant TICKET_PRICE = 0.1 ether;
     uint256 public constant SALES_DURATION = 60 days;
     uint256 public constant REFUND_DURATION = 14 days;
+    uint256 public constant REFUND_PERCENTAGE = 90; // 90% refund (10% penalty)
     
     // Redemption agent configuration - hardcoded list for testing
     address[] private redemptionAgentAddresses = [
@@ -44,7 +45,8 @@ contract DeployEventSystem is Script {
             address(token),
             TICKET_PRICE,
             SALES_DURATION,
-            REFUND_DURATION
+            REFUND_DURATION,
+            REFUND_PERCENTAGE
         );
         
         // Authorize sales contract to perform privileged operations

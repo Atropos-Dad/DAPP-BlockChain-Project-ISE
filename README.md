@@ -52,3 +52,29 @@ export default tseslint.config({
   },
 })
 ```
+
+# Event Ticket System
+
+This project provides a blockchain-based ticketing system for events, allowing organizers to mint, sell, and manage tickets as ERC-20 tokens.
+
+## Environment Variables
+
+Create a `.env` file with the following variables:
+
+```
+# Ethereum RPC URL for Sepolia testnet
+VITE_REACT_APP_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-api-key
+
+# Smart contract addresses
+VITE_EVENT_TOKEN_ADDRESS=0x...
+VITE_EVENT_SALES_ADDRESS=0x...
+```
+
+## Features
+
+- Buy tickets with ETH
+- View and manage ticket sales
+- Scan QR codes for ticket validation
+- Venue Dashboard for organizers
+- Issue refunds during the refund period
+- Manage door staff (redemption agents)

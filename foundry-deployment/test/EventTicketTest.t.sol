@@ -20,6 +20,7 @@ contract EventTicketTest is Test {
     uint256 public constant TICKET_PRICE = 0.1 ether;
     uint256 public constant SALES_DURATION = 30 days;
     uint256 public constant REFUND_DURATION = 7 days;
+    uint256 public constant REFUND_PERCENTAGE = 90; // 90% refund (10% penalty)
     
     function setUp() public {
         // Setup accounts
@@ -42,7 +43,8 @@ contract EventTicketTest is Test {
             address(token),
             TICKET_PRICE,
             SALES_DURATION,
-            REFUND_DURATION
+            REFUND_DURATION,
+            REFUND_PERCENTAGE
         );
         
         // Authorize sales contract
@@ -78,6 +80,7 @@ contract EventTicketTest is Test {
         // Then approve and refund one ticket
         uint256 refundAmount = 1;
         uint256 buyerBalanceBefore = address(buyer).balance;
+        uint256 expectedRefundValue = (TICKET_PRICE * refundAmount * REFUND_PERCENTAGE) / 100;
         
         // Approve the sales contract to transfer tokens back
         vm.prank(buyer);
@@ -89,8 +92,8 @@ contract EventTicketTest is Test {
         // Check results
         assertEq(token.balanceOf(buyer), buyAmount - refundAmount);
         assertEq(sales.purchases(buyer), buyAmount - refundAmount);
-        assertEq(address(sales).balance, TICKET_PRICE * (buyAmount - refundAmount));
-        assertEq(address(buyer).balance, buyerBalanceBefore + TICKET_PRICE * refundAmount);
+        assertEq(address(sales).balance, (TICKET_PRICE * buyAmount) - expectedRefundValue);
+        assertEq(address(buyer).balance, buyerBalanceBefore + expectedRefundValue);
         assertEq(sales.totalSold(), buyAmount - refundAmount);
     }
     

@@ -9,6 +9,7 @@ import LandingPage from './pages/LandingPage'
 import MyTickets from './pages/MyTickets'
 import ShowRedemptionQRCode from './pages/ShowRedemptionQRCode'
 import RedeemTicketsPage from './pages/RedeemTicketsPage'
+import VenueDashboard from './pages/VenueDashboard'
 
 function AppRoutes() {
   const { wallet } = useWallet();
@@ -51,6 +52,10 @@ function AppRoutes() {
         path="/redeem"
         element={wallet ? <RedeemTicketsPage /> : <Navigate replace to="/" />}
       />
+      <Route
+        path="/venue"
+        element={wallet ? <VenueDashboard /> : <Navigate replace to="/" />}
+      />
     </Routes>
   );
 }
@@ -77,7 +82,8 @@ function Navigation() {
               <Link to="/buy-tickets" style={{marginRight: '15px', textDecoration: 'none'}}>Buy Tickets</Link>
               <Link to="/my-tickets" style={{marginRight: '15px', textDecoration: 'none'}}>My Tickets</Link>
               <Link to="/show-qr" style={{marginRight: '15px', textDecoration: 'none'}}>Show Tickets</Link>
-              <Link to="/redeem" style={{textDecoration: 'none'}}>Redeem Tickets</Link>
+              <Link to="/redeem" style={{marginRight: '15px', textDecoration: 'none'}}>Redeem Tickets</Link>
+              <Link to="/venue" style={{textDecoration: 'none'}}>Venue Dashboard</Link>
             </>
           )}
         </div>

@@ -24,36 +24,58 @@ export const getSalesContract = (salesAddress: string, signer?: ethers.Signer) =
 export const getEventDetails = async (tokenAddress: string) => {
   const tokenContract = getTokenContract(tokenAddress);
   
-  const [name, symbol, eventName, eventDate, eventVenue] = await Promise.all([
-    tokenContract.name(),
-    tokenContract.symbol(),
-    tokenContract.eventName(),
-    tokenContract.eventDate(),
-    tokenContract.eventVenue()
-  ]);
-  
-  return { name, symbol, eventName, eventDate, eventVenue };
+  try {
+    // Batch all calls together to reduce separate RPC calls
+    const [name, symbol, eventName, eventDate, eventVenue] = await Promise.all([
+      tokenContract.name(),
+      tokenContract.symbol(),
+      tokenContract.eventName(),
+      tokenContract.eventDate(),
+      tokenContract.eventVenue()
+    ]);
+    
+    return { name, symbol, eventName, eventDate, eventVenue };
+  } catch (error) {
+    console.error("Error fetching event details:", error);
+    throw error;
+  }
 };
 
 // Ticket Sales Functions
 export const getTicketSalesInfo = async (salesAddress: string) => {
   const salesContract = getSalesContract(salesAddress);
   
-  const [price, available, sold, remaining, paused] = await Promise.all([
-    salesContract.ticketPrice(),
-    salesContract.availableTickets(),
-    salesContract.totalSold(),
-    salesContract.remainingSalesTime(),
-    salesContract.salesPaused()
-  ]);
-  
-  return {
-    ticketPrice: ethers.formatEther(price),
-    availableTickets: Number(available),
-    totalSold: Number(sold),
-    remainingTime: Number(remaining),
-    salesPaused: paused
-  };
+  try {
+    // Use multicall pattern to reduce separate RPC calls
+    // We'll create multiple calls but send them in one batch
+    const [
+      price, 
+      available, 
+      sold, 
+      remaining, 
+      paused,
+      refundRemaining
+    ] = await Promise.all([
+      salesContract.ticketPrice(),
+      salesContract.availableTickets(),
+      salesContract.totalSold(),
+      salesContract.remainingSalesTime(),
+      salesContract.salesPaused(),
+      salesContract.remainingRefundTime()
+    ]);
+    
+    return {
+      ticketPrice: ethers.formatEther(price),
+      availableTickets: Number(available),
+      totalSold: Number(sold),
+      remainingTime: Number(remaining),
+      salesPaused: paused,
+      remainingRefundTime: Number(refundRemaining)
+    };
+  } catch (error) {
+    console.error("Error fetching ticket sales info:", error);
+    throw error;
+  }
 };
 
 export const getTicketBalance = async (tokenAddress: string, walletAddress: string) => {
@@ -119,6 +141,45 @@ export const buyTickets = async (
   const receipt = await tx.wait();
   
   return receipt;
+};
+
+/**
+ * Refund tickets through the sales contract
+ */
+export const refundSalesTickets = async (
+  salesAddress: string,
+  signer: ethers.Signer,
+  amount: number
+) => {
+  const salesContract = getSalesContract(salesAddress, signer);
+  const tx = await salesContract.refundTickets(amount);
+  return tx.wait();
+};
+
+/**
+ * Add a redemption agent to the token contract
+ */
+export const addRedemptionAgent = async (
+  tokenAddress: string,
+  signer: ethers.Signer,
+  agent: string
+) => {
+  const tokenContract = getTokenContract(tokenAddress, signer);
+  const tx = await tokenContract.addRedemptionAgent(agent);
+  return tx.wait();
+};
+
+/**
+ * Remove a redemption agent from the token contract
+ */
+export const removeRedemptionAgent = async (
+  tokenAddress: string,
+  signer: ethers.Signer,
+  agent: string
+) => {
+  const tokenContract = getTokenContract(tokenAddress, signer);
+  const tx = await tokenContract.removeRedemptionAgent(agent);
+  return tx.wait();
 };
 
 export const redeemTickets = async (
