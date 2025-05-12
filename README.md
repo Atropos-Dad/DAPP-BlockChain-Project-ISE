@@ -68,6 +68,9 @@ VITE_REACT_APP_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-api-key
 # Smart contract addresses
 VITE_EVENT_TOKEN_ADDRESS=0x...
 VITE_EVENT_SALES_ADDRESS=0x...
+
+# Etherscan API key for transaction history and contract verification
+VITE_ETHERSCAN_API_KEY=your-etherscan-api-key
 ```
 
 ## Features

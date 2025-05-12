@@ -14,9 +14,8 @@ const WalletDetails: React.FC = () => {
   const [isLoadingTxs, setIsLoadingTxs] = useState<boolean>(false);
   const [showPrivateKey, setShowPrivateKey] = useState<boolean>(false);
 
-  // Define a placeholder for the Etherscan API key
-  // IMPORTANT: Replace this with your actual Etherscan API key
-  const ETHERSCAN_API_KEY = 'QGD71Q8MYJHVWXWPZN92FPRTRT2R286YVH';
+  // Read the Etherscan API key from environment variables
+  const ETHERSCAN_API_KEY = import.meta.env.VITE_ETHERSCAN_API_KEY;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
