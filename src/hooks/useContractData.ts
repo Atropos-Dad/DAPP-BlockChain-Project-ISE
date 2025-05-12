@@ -2,6 +2,42 @@ import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import * as contractService from '../services/contractService';
 
+// Utility function to retry failed requests with exponential backoff
+const retryWithBackoff = async <T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  initialDelayMs = 1000
+): Promise<T> => {
+  let retries = 0;
+  let lastError: any;
+
+  while (retries < maxRetries) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      
+      // Check if it's a rate limit error
+      const isRateLimit = 
+        (err instanceof Error && 
+         (err.message.includes('Too Many Requests') || 
+          err.message.includes('missing response')));
+      
+      if (!isRateLimit && retries === maxRetries - 1) {
+        throw err;
+      }
+      
+      // Wait with exponential backoff
+      const delayMs = initialDelayMs * Math.pow(2, retries);
+      console.log(`Request failed, retrying in ${delayMs}ms...`, err);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      retries++;
+    }
+  }
+  
+  throw lastError;
+};
+
 // Hook for fetching event details
 export const useEventDetails = (tokenAddress: string) => {
   const [eventDetails, setEventDetails] = useState<{
@@ -25,7 +61,11 @@ export const useEventDetails = (tokenAddress: string) => {
       try {
         setIsLoading(true);
         setError(null);
-        const details = await contractService.getEventDetails(tokenAddress);
+        
+        const details = await retryWithBackoff(
+          () => contractService.getEventDetails(tokenAddress)
+        );
+        
         setEventDetails(details);
       } catch (err) {
         console.error('Error fetching event details:', err);
@@ -64,7 +104,11 @@ export const useTicketSalesInfo = (salesAddress: string) => {
       try {
         setIsLoading(true);
         setError(null);
-        const info = await contractService.getTicketSalesInfo(salesAddress);
+        
+        const info = await retryWithBackoff(
+          () => contractService.getTicketSalesInfo(salesAddress)
+        );
+        
         setTicketSalesInfo(info);
       } catch (err) {
         console.error('Error fetching ticket sales info:', err);
@@ -222,16 +266,20 @@ export const useVenueDashboard = (
         setLoading(true);
         setError(null);
 
-        const info = await contractService.getTicketSalesInfo(salesAddress);
+        const info = await retryWithBackoff(
+          () => contractService.getTicketSalesInfo(salesAddress)
+        );
         
-        const priceWei = ethers.parseEther(info.ticketPrice);
-        const revenue = ethers.formatEther(priceWei * BigInt(info.totalSold));
+        const revenue = info.contractBalanceEth;
         
         setData({
-          ...info,
+          ticketPrice: info.ticketPrice,
+          availableTickets: info.availableTickets,
+          totalSold: info.totalSold,
           revenue,
           remainingSalesTime: info.remainingTime,
-          remainingRefundTime: info.remainingRefundTime
+          remainingRefundTime: info.remainingRefundTime,
+          salesPaused: info.salesPaused
         });
       } catch (err) {
         console.error('Error fetching venue dashboard data:', err);

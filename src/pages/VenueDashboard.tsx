@@ -12,6 +12,7 @@ const VenueDashboard: React.FC = () => {
   const { wallet } = useWallet();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState<number>(0);
   
   // Form state for redemption agents
   const [agentAddress, setAgentAddress] = useState<string>('');
@@ -91,6 +92,16 @@ const VenueDashboard: React.FC = () => {
     return `${hours}h ${minutes}m`;
   };
 
+  // Handle retry for rate limit errors
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    setError(null);
+  };
+
+  // Check if error is related to rate limiting
+  const isRateLimitError = error && 
+    (error.includes('Too Many Requests') || error.includes('missing response'));
+
   if (isLoading) {
     return (
       <div style={{ padding: '20px' }}>
@@ -104,6 +115,23 @@ const VenueDashboard: React.FC = () => {
             borderRadius: '4px'
           }}>
             {error}
+            {isRateLimitError && (
+              <div style={{ marginTop: '10px' }}>
+                <button 
+                  onClick={handleRetry}
+                  style={{
+                    padding: '8px 12px',
+                    background: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Retry Request
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -123,6 +151,23 @@ const VenueDashboard: React.FC = () => {
           borderRadius: '4px'
         }}>
           {error}
+          {isRateLimitError && (
+            <div style={{ marginTop: '10px' }}>
+              <button 
+                onClick={handleRetry}
+                style={{
+                  padding: '8px 12px',
+                  background: '#f44336',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Retry Request
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -175,7 +220,9 @@ const VenueDashboard: React.FC = () => {
             textAlign: 'center'
           }}>
             <h3 style={{ marginBottom: '5px', fontSize: '1em' }}>Contract Balance</h3>
-            <div style={{ fontSize: '1.8em', fontWeight: 'bold' }}>{venueData.contractBalanceEth ? `${venueData.contractBalanceEth} ETH` : 'Loading...'}</div>
+            <div style={{ fontSize: '1.8em', fontWeight: 'bold' }}>
+              {venueData?.revenue ? `${venueData.revenue} ETH` : 'Loading...'}
+            </div>
           </div>
         </div>
       )}

@@ -3,6 +3,9 @@ import { provider } from '../chain';
 import EventTicketSalesABI from '../abis/EventTicketSales.json';
 import EventTicketTokenABI from '../abis/EventTicketToken.json';
 
+// Helper function to add a small delay between API calls
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Event Token Contract Functions
 export const getTokenContract = (tokenAddress: string, signer?: ethers.Signer) => {
   return new ethers.Contract(
@@ -25,14 +28,20 @@ export const getEventDetails = async (tokenAddress: string) => {
   const tokenContract = getTokenContract(tokenAddress);
   
   try {
-    // Batch all calls together to reduce separate RPC calls
-    const [name, symbol, eventName, eventDate, eventVenue] = await Promise.all([
-      tokenContract.name(),
-      tokenContract.symbol(),
-      tokenContract.eventName(),
-      tokenContract.eventDate(),
-      tokenContract.eventVenue()
-    ]);
+    // Make calls sequentially to avoid hitting provider rate-limits
+    const name = await tokenContract.name();
+    await delay(100); // Add small delay between calls
+    
+    const symbol = await tokenContract.symbol();
+    await delay(100);
+    
+    const eventName = await tokenContract.eventName();
+    await delay(100);
+    
+    const eventDate = await tokenContract.eventDate();
+    await delay(100);
+    
+    const eventVenue = await tokenContract.eventVenue();
     
     return { name, symbol, eventName, eventDate, eventVenue };
   } catch (error) {
@@ -46,23 +55,27 @@ export const getTicketSalesInfo = async (salesAddress: string) => {
   const salesContract = getSalesContract(salesAddress);
   
   try {
-    // Use multicall pattern to reduce separate RPC calls
-    // We'll create multiple calls but send them in one batch
-    const [
-      price, 
-      available, 
-      sold, 
-      remaining, 
-      paused,
-      refundRemaining
-    ] = await Promise.all([
-      salesContract.ticketPrice(),
-      salesContract.availableTickets(),
-      salesContract.totalSold(),
-      salesContract.remainingSalesTime(),
-      salesContract.salesPaused(),
-      salesContract.remainingRefundTime()
-    ]);
+    // Make calls sequentially to reduce burst load on RPC
+    const price = await salesContract.ticketPrice();
+    await delay(100); // Add small delay between calls
+    
+    const available = await salesContract.availableTickets();
+    await delay(100);
+    
+    const sold = await salesContract.totalSold();
+    await delay(100);
+    
+    const remaining = await salesContract.remainingSalesTime();
+    await delay(100);
+    
+    const paused = await salesContract.salesPaused();
+    await delay(100);
+    
+    const refundRemaining = await salesContract.remainingRefundTime();
+    await delay(100); // Add delay
+
+    // Fetch the actual ETH balance of the contract
+    const contractBalanceWei = await provider.getBalance(salesAddress);
     
     return {
       ticketPrice: ethers.formatEther(price),
@@ -70,7 +83,9 @@ export const getTicketSalesInfo = async (salesAddress: string) => {
       totalSold: Number(sold),
       remainingTime: Number(remaining),
       salesPaused: paused,
-      remainingRefundTime: Number(refundRemaining)
+      remainingRefundTime: Number(refundRemaining),
+      // Add the formatted contract balance here
+      contractBalanceEth: ethers.formatEther(contractBalanceWei) 
     };
   } catch (error) {
     console.error("Error fetching ticket sales info:", error);

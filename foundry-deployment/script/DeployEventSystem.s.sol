@@ -7,24 +7,19 @@ import "../src/EventTicketSales.sol";
 
 contract DeployEventSystem is Script {
     // Event configuration
-    string public constant EVENT_NAME = "Ethereum Summer Conference";
-    string public constant EVENT_DATE = "2024-08-15";
-    string public constant EVENT_VENUE = "Crypto Convention Center";
-    uint256 public constant MAX_SUPPLY = 5000; // 5000 tickets
+    string public constant EVENT_NAME = "International night @ Stables";
+    string public constant EVENT_DATE = "2025-06-15";
+    string public constant EVENT_VENUE = "Stables";
+    uint256 public constant MAX_SUPPLY = 100; // 100 tickets
     
     // Sales configuration
-    uint256 public constant TICKET_PRICE = 0.1 ether;
-    uint256 public constant SALES_DURATION = 60 days;
-    uint256 public constant REFUND_DURATION = 14 days;
+    uint256 public constant TICKET_PRICE = 0.0001 ether;
+    uint256 public constant SALES_DURATION = 15 days;
+    uint256 public constant REFUND_DURATION = 6 days;
     uint256 public constant REFUND_PERCENTAGE = 90; // 90% refund (10% penalty)
     
     // Redemption agent configuration - hardcoded list for testing
-    address[] private redemptionAgentAddresses = [
-        // Add your test wallet addresses here.
-        address(0xCd8bAab24352c0261134e84FeA9543aB41D6DEE8)
-        // Example: address(0x1234567890123456789012345678901234567890) 
-        // Make sure to uncomment and replace with actual addresses or leave empty.
-    ];
+    address[] private redemptionAgentAddresses = new address[](0);
     
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

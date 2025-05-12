@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { ethers } from 'ethers';
@@ -13,6 +13,10 @@ const WalletDetails: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoadingTxs, setIsLoadingTxs] = useState<boolean>(false);
   const [showPrivateKey, setShowPrivateKey] = useState<boolean>(false);
+
+  // Define a placeholder for the Etherscan API key
+  // IMPORTANT: Replace this with your actual Etherscan API key
+  const ETHERSCAN_API_KEY = 'QGD71Q8MYJHVWXWPZN92FPRTRT2R286YVH';
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -37,87 +41,87 @@ const WalletDetails: React.FC = () => {
     setShowPrivateKey(false);
   };
 
+  // Get network information
+  const fetchNetworkInfo = useCallback(async () => {
+    try {
+      const network = await provider.getNetwork();
+      setNetworkInfo({
+        name: network.name,
+        chainId: Number(network.chainId)
+      });
+    } catch (error) {
+      console.error('Error fetching network info:', error);
+    }
+  }, []); // No dependencies as provider is stable
+
+  // Get wallet ETH balance
+  const fetchBalance = useCallback(async () => {
+    if (!wallet) return;
+    try {
+      setIsLoading(true);
+      const ethBalance = await provider.getBalance(wallet.address);
+      setBalance(ethers.formatEther(ethBalance));
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [wallet]);
+
+  // Get recent transactions using Etherscan API
+  const fetchTransactions = useCallback(async () => {
+    if (!wallet || !networkInfo) return;
+    
+    try {
+      setIsLoadingTxs(true);
+
+      let apiBaseUrl = 'https://api.etherscan.io/api'; // Default to mainnet
+      if (networkInfo.name === 'sepolia') {
+        apiBaseUrl = 'https://api-sepolia.etherscan.io/api';
+      }
+      // Add other network conditions here if needed
+
+      const response = await fetch(
+        `${apiBaseUrl}?module=account&action=txlist&address=${wallet.address}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc&apikey=${ETHERSCAN_API_KEY}`
+      );
+      const data = await response.json();
+
+      if (data.status === "1" && data.result) {
+        const formattedTxs = data.result.map((tx: any) => ({
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to,
+          value: tx.value, // Etherscan provides value in Wei
+          // timestamp: tx.timeStamp // Optional: if you need the timestamp
+        }));
+        setTransactions(formattedTxs.slice(0, 10));
+      } else {
+        console.error('Error fetching transactions from Etherscan:', data.message || 'Unknown error');
+        setTransactions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      setTransactions([]);
+    } finally {
+      setIsLoadingTxs(false);
+    }
+  }, [wallet, networkInfo, ETHERSCAN_API_KEY]); // Dependencies for fetchTransactions
+
   useEffect(() => {
-    // If no wallet is connected, redirect back to import page
     if (!wallet) {
       navigate('/import');
       return;
     }
-
-    // Get network information
-    const fetchNetworkInfo = async () => {
-      try {
-        const network = await provider.getNetwork();
-        setNetworkInfo({
-          name: network.name,
-          chainId: Number(network.chainId)
-        });
-      } catch (error) {
-        console.error('Error fetching network info:', error);
-      }
-    };
-
-    // Get wallet ETH balance
-    const fetchBalance = async () => {
-      try {
-        setIsLoading(true);
-        const ethBalance = await provider.getBalance(wallet.address);
-        setBalance(ethers.formatEther(ethBalance));
-      } catch (error) {
-        console.error('Error fetching balance:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Get recent transactions
-    const fetchTransactions = async () => {
-      if (!wallet) return;
-      
-      try {
-        setIsLoadingTxs(true);
-        //TODO THIS IS BAD ! _
-        // Using ethers v6 to get the most recent transactions
-        // Note: This is a simplified implementation and may not work on all networks
-        // For production, you might want to use a service like Etherscan API
-        const blockNumber = await provider.getBlockNumber();
-        // Search up to the last 1000 blocks for transactions
-        const searchDepth = Math.min(blockNumber, 1000); 
-        const blocksToSearch = Array.from({length: searchDepth}, (_, i) => blockNumber - i);
-
-        const txs: any[] = [];
-        // Search blocks from latest to oldest within the defined depth
-        for (const blockNum of blocksToSearch) { 
-          // Ensure we don't go below block 0
-          if (blockNum < 0) break; 
-
-          const blockData = await provider.getBlock(blockNum);
-          if (blockData && blockData.transactions) {
-            // We'll get detailed info for each transaction
-            for (const txHash of blockData.transactions) {
-              const tx = await provider.getTransaction(txHash);
-              if (tx && (tx.from === wallet.address || tx.to === wallet.address)) {
-                txs.push(tx);
-              }
-              // Limit to 5 transactions to avoid too many requests
-              if (txs.length >= 5) break;
-            }
-          }
-          if (txs.length >= 5) break;
-        }
-        
-        setTransactions(txs);
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-      } finally {
-        setIsLoadingTxs(false);
-      }
-    };
-
     fetchNetworkInfo();
     fetchBalance();
-    fetchTransactions();
-  }, [wallet, navigate]);
+  }, [wallet, navigate, fetchNetworkInfo, fetchBalance]);
+
+  useEffect(() => {
+    // This effect will run when fetchTransactions (which depends on wallet and networkInfo) is stable and available
+    if (wallet && networkInfo) {
+      fetchTransactions();
+    }
+  }, [wallet, networkInfo, fetchTransactions]); // fetchTransactions is now a dependency
 
   const handleDisconnect = () => {
     disconnect();
@@ -301,12 +305,12 @@ const WalletDetails: React.FC = () => {
               }}>
                 <div style={{display: 'flex', justifyContent: 'space-between'}}>
                   <div>
-                    <strong>{tx.from === wallet.address ? 'Sent' : 'Received'}</strong>
+                    <strong>{tx.from && wallet && tx.from.toLowerCase() === wallet.address.toLowerCase() ? 'Sent' : 'Received'}</strong>
                   </div>
                   <div>{tx.value ? ethers.formatEther(tx.value) + ' ETH' : 'Contract Interaction'}</div>
                 </div>
                 <div style={{fontSize: '0.8em', color: '#666', marginTop: '5px'}}>
-                  Hash: {tx.hash.substring(0, 10)}...
+                  Hash: {tx.hash ? tx.hash.substring(0, 10) : 'N/A'}...
                 </div>
               </div>
             ))}
