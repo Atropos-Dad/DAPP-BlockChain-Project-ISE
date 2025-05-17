@@ -81,7 +81,7 @@ const MyTickets: React.FC = () => {
   const calculateExpectedRefundEth = () => {
     if (venueData?.ticketPrice && venueData?.refundPercentage && refundAmount > 0) {
       try {
-        const ticketPriceWei = ethers.parseUnits(venueData.ticketPrice, 'wei'); // Assuming ticketPrice is in wei as a string
+        const ticketPriceWei = ethers.parseUnits(venueData.ticketPrice, 'ether');
         const totalTicketValueWei = ticketPriceWei * BigInt(refundAmount);
         const actualRefundWei = (totalTicketValueWei * BigInt(venueData.refundPercentage)) / 100n;
         return ethers.formatEther(actualRefundWei);

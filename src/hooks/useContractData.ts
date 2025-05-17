@@ -89,6 +89,7 @@ export const useTicketSalesInfo = (salesAddress: string) => {
     totalSold: number;
     remainingTime: number;
     salesPaused: boolean;
+    refundPercentage: number;
   } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -250,6 +251,7 @@ export const useVenueDashboard = (
     remainingSalesTime: number;
     remainingRefundTime: number;
     salesPaused: boolean;
+    refundPercentage: number;
   } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -279,7 +281,8 @@ export const useVenueDashboard = (
           revenue,
           remainingSalesTime: info.remainingTime,
           remainingRefundTime: info.remainingRefundTime,
-          salesPaused: info.salesPaused
+          salesPaused: info.salesPaused,
+          refundPercentage: info.refundPercentage
         });
       } catch (err) {
         console.error('Error fetching venue dashboard data:', err);

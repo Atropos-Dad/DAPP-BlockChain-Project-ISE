@@ -74,6 +74,9 @@ export const getTicketSalesInfo = async (salesAddress: string) => {
     const refundRemaining = await salesContract.remainingRefundTime();
     await delay(100); // Add delay
 
+    const refundPercentage = await salesContract.refundPercentage();
+    await delay(100);
+
     // Fetch the actual ETH balance of the contract
     const contractBalanceWei = await provider.getBalance(salesAddress);
     
@@ -84,7 +87,7 @@ export const getTicketSalesInfo = async (salesAddress: string) => {
       remainingTime: Number(remaining),
       salesPaused: paused,
       remainingRefundTime: Number(refundRemaining),
-      // Add the formatted contract balance here
+      refundPercentage: Number(refundPercentage),
       contractBalanceEth: ethers.formatEther(contractBalanceWei) 
     };
   } catch (error) {
