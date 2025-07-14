@@ -13,25 +13,36 @@ Built for Block 2.3 | ISE. A decentralized event ticketing system using Ethereum
 
 ## Screenshots
 
-### Venue Dashboard
-![Venue Dashboard](swappy-20250714-103246.png)
-*Event organizers can see ticket sales, manage refund periods, and add door staff*
-
-### Buy Tickets
-![Buy Tickets](swappy-20250714-103307.png)
-*Purchase tickets with ETH, shows gas fees and total cost*
-
-### Wallet Details
-![Wallet Details](swappy-20250714-103315.png)
-*Wallet info, balance, and transaction history on Sepolia testnet*
-
-### My Tickets
-![My Tickets](swappy-20250714-104345.png)
-*View owned tickets and request refunds during refund period*
-
-### QR Code
-![QR Code](swappy-20250714-104354.png)
-*Generate QR codes for ticket redemption at venues*
+<table>
+<tr>
+<td width="50%">
+<img src="docs/media/swappy-20250714-103246.png" alt="Venue Dashboard" width="100%">
+<br><em>Event organizers can see ticket sales, manage refund periods, and add door staff</em>
+</td>
+<td width="50%">
+<img src="docs/media/swappy-20250714-103307.png" alt="Buy Tickets" width="100%">
+<br><em>Purchase tickets with ETH, shows gas fees and total cost</em>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/media/swappy-20250714-103315.png" alt="Wallet Details" width="100%">
+<br><em>Wallet info, balance, and transaction history on Sepolia testnet</em>
+</td>
+<td width="50%">
+<img src="docs/media/swappy-20250714-104345.png" alt="My Tickets" width="100%">
+<br><em>View owned tickets and request refunds during refund period</em>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/media/swappy-20250714-104354.png" alt="QR Code" width="100%">
+<br><em>Generate QR codes for ticket redemption at venues</em>
+</td>
+<td width="50%">
+</td>
+</tr>
+</table>
 
 ## Tech Stack
 
