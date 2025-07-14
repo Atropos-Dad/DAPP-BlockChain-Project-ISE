@@ -36,9 +36,10 @@ Built for Block 2.3 | ISE. A decentralized event ticketing system using Ethereum
 </tr>
 </table>
 
-### Venue Dashboard
+<div align="center">
 <img src="docs/media/swappy-20250714-103246.png" alt="Venue Dashboard" width="60%">
 <br><em>Event organizers can see ticket sales, manage refund periods, and add door staff</em>
+</div>
 
 ## Tech Stack
 
