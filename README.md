@@ -16,8 +16,8 @@ Built for Block 2.3 | ISE. A decentralized event ticketing system using Ethereum
 <table>
 <tr>
 <td width="50%">
-<img src="docs/media/swappy-20250714-103246.png" alt="Venue Dashboard" width="100%">
-<br><em>Event organizers can see ticket sales, manage refund periods, and add door staff</em>
+<img src="docs/media/swappy-20250714-104354.png" alt="QR Code" width="100%">
+<br><em>Generate QR codes for ticket redemption at venues</em>
 </td>
 <td width="50%">
 <img src="docs/media/swappy-20250714-103307.png" alt="Buy Tickets" width="100%">
@@ -34,15 +34,11 @@ Built for Block 2.3 | ISE. A decentralized event ticketing system using Ethereum
 <br><em>View owned tickets and request refunds during refund period</em>
 </td>
 </tr>
-<tr>
-<td width="50%">
-<img src="docs/media/swappy-20250714-104354.png" alt="QR Code" width="100%">
-<br><em>Generate QR codes for ticket redemption at venues</em>
-</td>
-<td width="50%">
-</td>
-</tr>
 </table>
+
+### Venue Dashboard
+<img src="docs/media/swappy-20250714-103246.png" alt="Venue Dashboard" width="60%">
+<br><em>Event organizers can see ticket sales, manage refund periods, and add door staff</em>
 
 ## Tech Stack
 
